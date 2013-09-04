@@ -1,0 +1,8 @@
+name = OpenFit Charts
+description = "Provides charting features."
+core = 7.x
+
+package = "OpenFit"
+files[] = openfit_charts.module
+
+version = "7.x-1.0"

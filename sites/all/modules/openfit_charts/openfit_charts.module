@@ -1,0 +1,63 @@
+<?php
+
+/**
+ * Implements hook_element_info().
+ */
+function openfit_charts_element_info() {
+  return array(
+    'openfit_chart' => array(
+      '#input' => FALSE,
+      '#theme' => 'openfit_chart',
+      '#activity_id' => -1,
+      '#default' => '',
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function openfit_charts_theme($existing, $type, $theme, $path) {
+  return array(
+    'openfit_chart' => array(
+      'render element' => 'element',
+    ),
+  );
+}
+
+function openfit_charts_library() {
+  $path = drupal_get_path('module', 'openfit_charts');
+  return array(
+    'charting' => array(
+      'title' => t('Openfit Charting'),
+      'website' => 'openfitapi.com',
+      'version' => '1.0',
+      'js' => array(
+        $path.'/flot/jquery.flot.js' => array(),
+        $path.'/flot/jquery.flot.selection.js' => array(),
+        $path.'/flot/jquery.flot.resize.js' => array(),
+        $path.'/jquery.ui.openfit_chart.js' => array(),
+        $path.'/jquery.ui.selectmenu.js' => array(),
+      ),
+      'css' => array(
+        $path.'/jquery.ui.selectmenu.css' => array(),
+        $path.'/jquery.ui.openfit_chart.css' => array(),
+      ),
+      'dependencies' => array(
+        array('system', 'ui'),
+        array('system', 'ui.button'),
+        array('system', 'ui.dialog'),
+        array('system', 'ui.slider'),
+      ),
+    ),
+  );
+}
+
+function theme_openfit_chart($variables) {
+  drupal_add_library('openfit_charts', 'charting');
+  
+  $js = 'jQuery("#openfit-chart-'.$variables['element']['#activity_id'].'").openfitChart().openfitChart("init", '.$variables['element']['#activity_id'].');';
+  drupal_add_js($js, array('type' => 'inline', 'scope' => 'footer'));
+  
+  return '<div id="openfit-chart-'.$variables['element']['#activity_id'].'" class="openfit-chart clearfix"></div>';
+}

@@ -1,0 +1,1226 @@
+<?php
+
+$ndbno = 0; 
+$calories_preview = 0;
+$protein_preview = 0;
+$fat_preview = 0;
+$carbs_preview = 0;
+$save_date = strftime('%Y-%m-%d', time());
+
+/**
+* @file
+* A block module that provides access to the USDA database of nutritional information.
+*/
+
+/**
+* Implements hook_help.
+*
+* Displays help and module information.
+*
+* @param path
+*   Which path of the site we're using to display help
+* @param arg
+*   Array that holds the current path as returned from arg() function
+*/
+function nutrition_tracker_help($path, $arg) {
+  switch ($path) {
+    case "admin/help#nutrition_tracker":
+      return '<p>' . t("Nutrition Tracker provides an interface for the USDA SR25 database for use on your website.") . '</p>';
+      break;
+  }
+} 
+
+/**
+* Implements hook_menu().
+*/
+function nutrition_tracker_menu() {
+  $items = array();
+
+  /*$items['admin/config/content/nutrition_tracker'] = array(
+    'title' => 'Nutrition Tracker',
+    'description' => 'Configuration for Nutrition Tracker module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('nutrition_tracker_config_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );*/
+  
+  $items['nutrition_tracker/nutrition'] = array(
+    'title' => 'Nutrition Tracking',
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('nutrition_tracker_form'),
+	'access callback' => 'user_is_logged_in',
+  );
+  
+  $items['nutrition_tracker/nutrition/nutrition_tracker_form'] = array(
+    'title' => 'Daily Nutrition',
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('nutrition_tracker_form'),
+	'access callback' => 'user_is_logged_in',
+	'weight' => 0,
+	'type' => MENU_DEFAULT_LOCAL_TASK | MENU_VISIBLE_IN_BREADCRUMB,
+  );
+  
+  $items['nutrition_tracker/nutrition/nutrition_tracker_add_item_form'] = array(
+    'title' => 'Add Item',
+    'page callback' => 'drupal_get_form',
+	'page arguments' => array('nutrition_tracker_add_item_form'),
+    'access callback' => 'user_is_logged_in',
+	'weight' => 1,
+    'type' => MENU_LOCAL_TASK | MENU_VISIBLE_IN_BREADCRUMB,
+  );
+  
+  $items['nutrition_tracker/nutrition/nutrition_tracker_meal_stacker_form'] = array(
+    'title' => 'Meal Stacker',
+    'page callback' => 'drupal_get_form',
+	'page arguments' => array('nutrition_tracker_meal_stacker_form'),
+    'access callback' => 'user_is_logged_in',
+	'weight' => 2,
+    'type' => MENU_LOCAL_TASK | MENU_VISIBLE_IN_BREADCRUMB,
+  );
+  
+  return $items;
+}
+
+/**
+* Page callback: Nutrition Tracker settings
+*
+* @see nutrition_tracker_menu()
+*
+function nutrition_tracker_config_form($form, &$form_state) {
+  
+  $form['nutrition_tracker_dbname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Database name'),
+	'#default_value' => variable_get('nutrition_tracker_dbname'),
+    '#size' => 60,
+    '#maxlength' => 60,
+    '#description' => t('The name of the database to connect to.'),
+    '#required' => TRUE,
+  );
+  $form['nutrition_tracker_username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Database username'),
+	'#default_value' => variable_get('nutrition_tracker_username'),
+    '#size' => 60,
+    '#maxlength' => 60,
+    '#description' => t('The username for the database.'),
+    '#required' => TRUE,
+  );
+  $form['nutrition_tracker_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Database password'),
+	'#default_value' => variable_get('nutrition_tracker_password'),
+    '#size' => 60,
+    '#maxlength' => 60,
+    '#description' => t('The password for the database.'),
+    '#required' => TRUE,
+  );
+  $form['nutrition_tracker_hostname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Database host name'),
+	'#default_value' => variable_get('nutrition_tracker_hostname','localhost'),
+    '#size' => 60,
+    '#maxlength' => 60,
+    '#description' => t('The name of the host for the database. This usually does not have to be changed.'),
+    '#required' => TRUE,
+  );
+
+  return system_settings_form($form);
+}*/
+
+function nutrition_tracker_add_item_form($form, &$form_state) {
+  drupal_set_title('Add Item to Database');
+  $breadcrumb=array();
+  drupal_set_breadcrumb($breadcrumb);
+  /*drupal_add_js('sites/all/libraries/maskedinput/jquery.maskedinput-1.3.js');*/
+  db_set_active('nutrition_facts');
+  $results1 =  db_query("SELECT FdGrp_Cd, FdGrp_Desc FROM {FD_GROUP} ORDER BY FdGrp_Desc ASC", array(), array());
+
+  //define rows
+  $options1 = array();
+  foreach ($results1 as $result) {
+    $options1[$result->FdGrp_Cd] = $result->FdGrp_Desc;
+  }
+  db_set_active();
+
+  $form['item_name'] = array(
+    '#type' => 'textfield',
+	'#title' => '<h3>Enter a name for this item:</h3>',
+	'#prefix' => '<div id="itemname">',
+	'#suffix' => '</div>',
+	'#length' => 50,
+	'#description' => 'Maximum 50 alphanumeric (A-Z and 0-9) characters',
+	'#attributes' => array('class' => array('item_name')),
+	'#ajax' => array(
+      'callback' => 'change_button_state_callback',
+      'wrapper' => 'newitembutton',
+      'method' => 'replace'),
+  );
+  $form['serving_size'] = array(
+    '#type' => 'textfield',
+	'#title' => '<h3>Enter a serving size for this item:</h3>',
+	'#prefix' => '<div id="servingsize">',
+	'#suffix' => '</div>',
+	'#length' => 20,
+	'#description' => 'Maximum 20 alphanumeric (A-Z and 0-9 and /) characters',
+	'#attributes' => array('class' => array('serving_size')),
+	'#ajax' => array(
+      'callback' => 'change_button_state_callback',
+      'wrapper' => 'newitembutton',
+      'method' => 'replace'),
+  );
+  $form['pick_a_category'] = array(
+    '#type' => 'select',
+	'#title' => '<h3>Select a category for this item:</h3>',
+	'#prefix' => '<div id="pickacategory">',
+	'#suffix' => '</div>',
+	'#options' => $options1,
+	'#description' => t('Select a category...'),
+	'#attributes' => array('class' => array('pickcategory')),
+	'#validated' => TRUE,
+	'#ajax' => array(
+      'callback' => 'change_button_state_callback',
+      'wrapper' => 'newitembutton',
+      'method' => 'replace'),
+  );
+  $form['main_nutrients'] = array(
+    '#type' => 'item',
+	'#prefix' => '<div id="main_nutrient_input">',
+	'#suffix' => '</div>',
+	'#title' => '<h3>Enter the amounts for the following nutrients:</h3>',
+  );
+  $form['main_nutrients']['top_div']['calories'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Calories:',
+	'#prefix' => '<div class="thing extra_indent bottom_border">',
+	'#suffix' => 'kCal</div>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['left_div'] = array(
+    '#type' => 'item',
+	'#prefix' => '<div id="main_nutrient_left_div">',
+	'#suffix' => '</div>',
+  );
+  
+  $form['main_nutrients']['left_div']['total_fat'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Total Fat:',
+	'#prefix' => '<div class="thing extra_indent">',
+	'#suffix' => 'grams</div>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['left_div']['saturated_fat'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Saturated Fat:',
+	'#prefix' => '<ul><li><div class="thing">',
+	'#suffix' => 'grams</div></li>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['left_div']['monounsaturated_fat'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Monounsaturated Fat:',
+	'#prefix' => '<li><div class="thing">',
+	'#suffix' => 'grams</div></li>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['left_div']['polyunsaturated_fat'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Polyunsaturated Fat:',
+	'#prefix' => '<li><div class="thing">',
+	'#suffix' => 'grams</div></li>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['left_div']['trans_fat'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Trans Fat:',
+	'#prefix' => '<li><div class="thing">',
+	'#suffix' => 'grams</div></li></ul>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['left_div']['cholesterol'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Cholesterol:',
+	'#prefix' => '<div class="thing extra_indent bottom_border">',
+	'#suffix' => 'grams</div>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['left_div']['vitamin_a'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Vitamin A:',
+	'#prefix' => '<div class="thing extra_indent">',
+	'#suffix' => '%</div>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['left_div']['calcium'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Calcium:',
+	'#prefix' => '<div class="thing extra_indent bottom_border">',
+	'#suffix' => '%</div>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['right_div'] = array(
+    '#type' => 'item',
+	'#prefix' => '<div id="main_nutrient_right_div">',
+	'#suffix' => '</div>',
+  );
+  $form['main_nutrients']['right_div']['sodium'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Sodium:',
+	'#prefix' => '<div class="thing1 extra_indent">',
+	'#suffix' => 'milligrams</div>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['right_div']['potassium'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Potassium:',
+	'#prefix' => '<div class="thing1 extra_indent">',
+	'#suffix' => 'milligrams</div>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['right_div']['carbs'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Carbohydrates:',
+	'#prefix' => '<div class="thing1 extra_indent">',
+	'#suffix' => 'grams</div>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['right_div']['fiber'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Dietary Fiber:',
+	'#prefix' => '<ul><li><div class="thing1">',
+	'#suffix' => 'grams</div></li>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['right_div']['sugar'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Sugar:',
+	'#prefix' => '<li><div class="thing1">',
+	'#suffix' => 'grams</div></li></ul>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['right_div']['protein'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Protein:',
+	'#prefix' => '<div class="thing1 extra_indent bottom_border">',
+	'#suffix' => 'grams</div>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['right_div']['vitamin_c'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Vitamin C:',
+	'#prefix' => '<div class="thing1 extra_indent">',
+	'#suffix' => '%</div>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['right_div']['iron'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Iron:',
+	'#prefix' => '<div class="thing1 extra_indent bottom_border">',
+	'#suffix' => '%</div>',
+	'#default_value' => 0,
+	'#length' => 8,
+	'#attributes' => array('class' => array('number_input')),
+  );
+  $form['main_nutrients']['new_item_button'] = array(
+    '#type' => 'button',
+	'#value' => t('Add Item'),
+	'#prefix' => '<div id="newitembutton">',
+	'#suffix' => '</div>',
+	'#attributes' => array('class' => array('additem')),
+	'#ajax' => array(
+	  'callback' => 'new_item_button_callback',
+      'wrapper' => 'successful_db_query',
+	  'progress' => array('type' => 'throbber', 'message' => '')),
+  );
+  
+  switch (!empty($form_state['values']['item_name']) && !empty($form_state['values']['serving_size']) && !empty($form_state['values']['pick_a_category'])) {
+    case true:
+	  $form['main_nutrients']['new_item_button']['#disabled'] = FALSE;
+	  break;
+	default:
+	  $form['main_nutrients']['new_item_button']['#disabled'] = TRUE;
+	  break;
+  }  
+  $form['success'] = array(
+    '#type' => 'item',
+	'#prefix' => '<div id="successful_db_query">',
+	'#suffix' => '</div>',
+  );
+  
+  return $form;
+}
+
+function change_button_state_callback ($form, &$form_state) {
+  switch (!empty($form_state['values']['item_name']) && !empty($form_state['values']['serving_size'])  && !empty($form_state['values']['pick_a_category'])) {
+    case true:
+	  $form['main_nutrients']['new_item_button']['#disabled'] = FALSE;
+	  break;
+	default:
+	  $form['main_nutrients']['new_item_button']['#disabled'] = TRUE;
+	  break;
+  }  
+  return $form['main_nutrients']['new_item_button'];
+}
+
+function new_item_button_callback($form, &$form_state) {
+  $calcium = $form_state['values']['calcium'];
+  $iron = $form_state['values']['iron'];
+  $vitc = $form_state['values']['vitamin_c'];
+  $vita = $form_state['values']['vitamin_a'];
+  if ($calcium != 0) {$calcium=($calcium/100)*1000;}
+  if ($iron != 0 ) {$iron=($iron/100)*8;}
+  if ($vitc != 0) {$vitc=($vitc/100)*75;}
+  if ($vita != 0) {$vita=($vita/100)*3000;}
+  
+  db_set_active('nutrition_facts');
+  $results1 =  db_query("SELECT NDB_No FROM {FOOD_DES} ORDER BY NDB_No DESC LIMIT 1", array(), array());
+  $ndbno = array();
+  foreach ($results1 as $result) {
+    $ndbno[1] = $result->NDB_No;
+  }
+  $newNDB = $ndbno[1] + 1;
+  $shortname=str_replace(" ","",$form_state['values']['item_name']);
+  
+  $addnewitem_desc = db_query("INSERT INTO {FOOD_DES} (NDB_No,
+					 				  	   			   FdGrp_Cd,
+													   Long_Desc,
+													   Shrt_Desc)
+ 													   VALUES
+													   ('".$newNDB."',
+													    '".$form_state['values']['pick_a_category']."',
+														'".$form_state['values']['item_name']."',
+														'".$shortname."')");
+  
+  $addnewitem_weight = db_query("INSERT INTO {WEIGHT}
+					(NDB_No,
+					 Seq,
+					 Amount,
+					 Msre_Desc,
+					 Gm_Wgt)
+			 VALUES
+			 	    ('".$newNDB."',
+					 1,
+					 1,
+					 '".$form_state['values']['serving_size']."',
+					 100)");
+    					 			 
+    $insert_calories = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES
+    			 	    ('".$newNDB."',208,'".$form_state['values']['calories']."')");
+    $insert_totalfat = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',204,'".$form_state['values']['total_fat']."')");
+    $insert_satfat = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',606,'".$form_state['values']['saturated_fat']."')");
+    $insert_monofat = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',645,'".$form_state['values']['monounsaturated_fat']."')");
+    $insert_polyfat = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',646,'".$form_state['values']['polyunsaturated_fat']."')");
+    $insert_transfat = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',605,'".$form_state['values']['trans_fat']."')");
+    $insert_choles = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',601,'".$form_state['values']['cholesterol']."')");
+    $insert_sodium = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',307,'".$form_state['values']['sodium']."')");
+    $insert_potass = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',306,'".$form_state['values']['potassium']."')");
+    $insert_carbs = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',205,'".$form_state['values']['carbs']."')");
+    $insert_fiber = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',291,'".$form_state['values']['fiber']."')");
+    $insert_sugar = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',269,'".$form_state['values']['sugar']."')");
+    $insert_protein = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',203,'".$form_state['values']['protein']."')");
+    $insert_calcium = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',301,'".$calcium."')");
+    $insert_iron = db_query("INSERT INTO {NUT_DATA}
+    					(NDB_No, Nutr_No, Nutr_Val)
+    			 VALUES					
+    					('".$newNDB."',303,'".$iron."')");
+	$insert_vitc = db_query("INSERT INTO {NUT_DATA}
+					(NDB_No, Nutr_No, Nutr_Val)
+			 VALUES					
+					('".$newNDB."',401,'".$vitc."')");
+	$insert_vita = db_query("INSERT INTO {NUT_DATA}
+					(NDB_No, Nutr_No, Nutr_Val)
+			 VALUES					
+					('".$newNDB."',318,'".$vita."')");
+  
+    db_set_active();
+	
+	$form['success']['#markup'] = '<h2>Item added successfully</h2>';
+	return $form['success'];
+}
+
+function nutrition_tracker_meal_stacker_form($form, &$form_state) {
+  drupal_set_title('Meal Stacker');
+  $breadcrumb=array();
+  drupal_set_breadcrumb($breadcrumb);  
+  $form['temporary2'] = array(
+    '#type' => 'item',
+	'#markup' => '<p>'.t('This feature is currently under construction and will be available soon.').'</p>',
+  );
+  return $form;
+}
+
+function nutrition_tracker_form($form, &$form_state) {
+
+  drupal_set_title('Daily Nutrition Tracking');
+  global $ndbno, $calories_preview, $fat_preview, $protein_preview, $carbs_preview, $save_date;
+  $form = array();
+
+  db_set_active('nutrition_facts');
+  $results1 =  db_query("SELECT FdGrp_Cd, FdGrp_Desc FROM {FD_GROUP} ORDER BY FdGrp_Desc ASC", array(), array());
+
+  //define rows
+  $options1 = array();
+  foreach ($results1 as $result) {
+    $options1[$result->FdGrp_Cd] = $result->FdGrp_Desc;
+  }
+  db_set_active();
+  
+  drupal_add_library('system', 'ui.datepicker');
+
+  $form['nutrition_tracker_description'] = array(
+    '#type' => 'item',
+	'#markup' => '<p>'.t('The Thrive Nutrition and Fitness nutrition tracker is a powerful tool
+	                 that will allow you to track everything you eat, and see where all 
+					 your excess calories are coming from. It also allows you to track
+					 nutrient deficiencies and excesses. Select a date on the right to get started.').'</p>',
+	'#prefix' => '<div id="nutritiontrackerdescription">',
+	'#suffix' => '</div>',
+  );
+  
+  $form['pick_a_date'] = array(
+    '#type' => 'date_popup',
+	'#date_format' => 'm/d/Y',
+	'#title' => '<h2>'.t('Select a date').'</h2>',
+    '#default_value' => date('Y-m-d', time()),
+    '#size' => 10,
+	'#prefix' => '<div id="pickdate">',
+	'#suffix' => '</div>',
+	'#attributes' => array('class' => array('pickdates')),
+	'#ajax' => array(
+      'callback' => 'date_shown_callback',
+      'wrapper' => 'dateshown',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ),
+	'#validated' => TRUE,
+  );
+  
+  $form['nutrition_header'] = array(
+    '#type' => 'item',
+	'#prefix' => '<div id="nutritionheader">',
+	'#suffix' => '</div>',
+	'#markup' => '<h3>'.t('Select foods to add to your totals...').'</h3>',
+  );
+  
+  $form['display_data'] = array(
+    '#type' => 'item',
+    '#prefix' => '<div id="displaydata">',
+	'#suffix' => '</div>',
+	'#validated' => TRUE,
+  );
+   
+  $form['pick_a_category'] = array(
+    '#type' => 'select',
+	'#options' => $options1,
+	'#description' => t('Select a category...'),
+	'#attributes' => array('class' => array('pickcategory')),
+	'#ajax' => array(
+      'callback' => 'pick_a_category_callback',
+      'wrapper' => 'pickfood',
+	  'progress' => array('type' => 'throbber', 'message' => ''),
+    ),
+	'#prefix' => '<div id="foodpicker"><div id="pickcategories">',
+	'#suffix' => '</div>',
+	'#validated' => TRUE,
+  );
+  
+  $form['pick_a_food'] = array(
+    '#type' => 'select',
+	'#description' => t('Select a food item to add to your daily nutritional totals...'),
+	'#attributes' => array('class' => array('pickfoods')),
+    '#prefix' => '<div id="pickfood">',
+	'#suffix' => '</div></div>',
+	'#ajax' => array(
+      'callback' => 'pick_a_food_callback',
+      'wrapper' => 'nutritionpreview',
+	  'progress' => array('type' => 'throbber', 'message' => ''),
+    ),
+	'#validated' => TRUE,
+  );
+      
+  switch (empty($form_state['values']['pick_a_category'])) {
+    case true:
+	  $form['pick_a_food']['#options'] = array('Select a food group...');
+	  break;
+	default:
+	  $selected = $form_state['values']['pick_a_category'];
+	  db_set_active('nutrition_facts');
+      $results2 =  db_query("SELECT NDB_No, Long_Desc FROM {FOOD_DES} WHERE FdGrp_Cd = ".$selected." ORDER BY Long_Desc ASC", array(), array());
+      //define rows
+      $options2 = array();
+      foreach ($results2 as $result) {
+        $options2[$result->NDB_No] = $result->Long_Desc;
+      }
+      db_set_active();
+	  $form['pick_a_food']['#options'] = $options2;
+	  break;
+  }
+  
+  $form['nutrition_preview'] = array(
+    '#type' => 'item',
+	'#prefix' => '<div id="nutritionpreview">',
+	'#suffix' => '</div>',
+  );
+  
+  switch (empty($form_state['values']['pick_a_food'])) {
+    case true:
+	  $form['nutrition_preview']['#markup'] = '<div id="preview"><div id="preview_label"><h3>'.t('Select a food to see a preview of it\'s nutritional values').'</h3></div></div>';
+	  break;
+	default:
+	  $ndbno = $form_state['values']['pick_a_food'];
+	  db_set_active('nutrition_facts');
+      $results3 = db_query("SELECT {NUT_DATA}.Nutr_No, {NUT_DATA}.Nutr_Val, NUTR_DEF.NutrDesc FROM {{NUT_DATA}} INNER JOIN {NUTR_DEF} ON NUTR_DEF.Nutr_No = {NUT_DATA}.Nutr_No WHERE {NUT_DATA}.NDB_No = ".$ndbno , array(), array());
+      $results4 = db_query("SELECT WEIGHT.Amount, WEIGHT.Gm_Wgt, WEIGHT.Msre_Desc, WEIGHT.Seq FROM {WEIGHT} WHERE WEIGHT.NDB_No = ".$ndbno, array(), array());
+	  //define rows
+      $nutrient_values = array();
+      foreach ($results3 as $result) {
+        $nutrient_values[$result->Nutr_No] = array('value'=>$result->Nutr_Val, 'desc'=>$result->NutrDesc);
+      }
+	  $weight_values = array();
+	  foreach ($results4 as $result) {
+	    $weight_values[$result->Seq] = array('amount'=>$result->Amount, 'gmwgt'=>$result->Gm_Wgt, 'msre'=>$result->Msre_Desc);
+	  }
+      db_set_active();
+	  $amt=number_format($weight_values['1']['amount']);
+	  $calories_preview = number_format($nutrient_values['208']['value']*$weight_values['1']['gmwgt']/100);
+	  $protein_preview = number_format($nutrient_values['203']['value']*$weight_values['1']['gmwgt']/100);
+	  $fat_preview = number_format($nutrient_values['204']['value']*$weight_values['1']['gmwgt']/100);
+	  $carbs_preview = number_format($nutrient_values['205']['value']*$weight_values['1']['gmwgt']/100);
+	  $form['nutrition_preview']['#markup'] = '
+	    <div id="preview">
+		  <div id="preview_label"><h3>Nutrient information for '.$amt.' '.$weight_values['1']['msre'].' of '.$options2[$ndbno].'</h3></div>
+		  <div id="preview_header">
+		    <div id="preview_header_calories">Calories</div>
+			<div id="preview_header_protein">Protein</div>
+			<div id="preview_header_fat">Fat</div>
+			<div id="preview_header_carbs">Carbs</div>
+		  </div>
+		  <div id="preview_body">
+		    <div id="preview_body_calories">'.$calories_preview.'</div>
+			<div id="preview_body_protein">'.$protein_preview.' grams</div>
+			<div id="preview_body_fat">'.$fat_preview.' grams</div>
+			<div id="preview_body_carbs">'.$carbs_preview.' grams</div>
+		  </div>
+		</div>
+	    ';
+	  break;
+  }
+  
+  $form['add_item_button'] = array(
+    '#type' => 'button',
+	'#value' => t('Add Item'),
+	'#prefix' => '<div id="additembutton">',
+	'#suffix' => '</div>',
+	'#attributes' => array('class' => array('additem')),
+	'#ajax' => array(
+	  'callback' => 'add_item_button_callback',
+      'wrapper' => 'dailynutrition',
+	  'progress' => array('type' => 'throbber', 'message' => '')),
+  );
+  
+  switch (empty($form_state['values']['pick_a_food'])) {
+    case true:
+	  $form['add_item_button']['#disabled'] = TRUE;
+	  break;
+	default:
+	  $form['add_item_button']['#disabled'] = FALSE;
+	  break;
+  }
+  
+  $form['date_shown'] = array(
+    '#type' => 'item',
+	'#attributes' => array('class' => array('date_shown')),
+	'#validated' => TRUE,
+	'#prefix' => '<div id="dateshown">',
+	'#suffix' => '</div>',
+  );
+  
+  switch (empty($form_state['values']['pick_a_date'])) {
+    case true:
+	  $selected_date = date('l\, F j\, Y', time());
+	  $save_date = strftime('%Y-%m-%d', time());
+	  $form['date_shown']['#markup'] = '<h3>'.t('Your nutritional information for ').$selected_date.'</h3>';
+	  break;
+	default:
+	  $selected_date = date('l\, F j\, Y',strtotime($form_state['values']['pick_a_date']['date'])); 
+	  $save_date = strftime('%Y-%m-%d', strtotime($form_state['values']['pick_a_date']['date']));
+	  $form['date_shown']['#markup'] = '<h3>'.t('Your nutritional information for ').$selected_date.'</h3>';
+	  break;
+  }
+  
+  drupal_add_library('system', 'ui');
+  
+  $form['daily_nutrition'] = array(
+    '#type' => 'item',
+	'#prefix' => '<div id="dailynutrition">',
+	'#suffix' => '</div>',
+  );
+  
+  $form['daily_nutrition']['header'] = array(
+    '#type' => 'item',
+	'#markup' => '  
+					<div id="total_header">
+					  <div id="total_header_food_name">Food Name</div>
+					  <div id="total_header_meal_name">Meal</div>
+					  <div id="total_header_amount">#</div>
+					  <div id="total_header_serving">Serving Size</div>
+		      		  <div id="total_header_calories">Calories</div>
+   					  <div id="total_header_protein">Protein Grams</div>
+					  <div id="total_header_fat">Fat Grams</div>
+					  <div id="total_header_carbs">Carbs Grams</div>
+					  <div id+"total_header_holder"></div>
+					</div>',
+  );
+	
+  db_set_active('nutrition_facts');
+  global $user;
+  $results5 = db_query("SELECT * FROM {DAILY_USER_{NUT_DATA}} WHERE DAILY_USER_{NUT_DATA}.Added_Date = '".$save_date."' AND DAILY_USER_{NUT_DATA}.UserId = ".$user->uid." ORDER BY Unique_Id ASC" , array(), array());
+  $results7 = db_query("SELECT * FROM {MEAL_ITEMS}", array(), array());
+  //define rows
+  $days_nutrition = array();
+  $meal_items = array();
+  $i = 0;
+  foreach ($results5 as $result) {
+    $i += 1;
+    $days_nutrition[$i] = array('mealid'=>$result->Meal_Id, 'seq'=>$result->Seq, 'ndbno'=>$result->NDB_No, 'amount'=>$result->Amount, 'id'=>$result->Unique_Id);
+  }
+  $form ['daily_nutrition']['num_rows'] = array(
+    '#type' => 'hidden',
+	'#value' => $i,
+  );
+  
+  foreach ($results7 as $result) {
+    $meal_items[$result->Meal_Id] = $result->Meal_Name;
+  }
+  db_set_active();
+  
+  $rows = array();
+  $total_calories = 0;
+  $total_carbs = 0;
+  $total_fat = 0;
+  $total_protein = 0;
+  switch (empty($days_nutrition)) {
+    case true:
+	  $form['daily_nutrition']['body']['nodata']['#markup'] = '<p id="nodata">'.t('There is no data to display for this date.').'</p>';
+	  break;
+	default:
+	  unset($form['daily_nutrition']['body']); 
+	  for ($f=1; $f<=$i; $f++) {
+	    db_set_active('nutrition_facts');
+        $results3 = db_query("SELECT {NUT_DATA}.Nutr_No, {NUT_DATA}.Nutr_Val FROM {{NUT_DATA}} WHERE {NUT_DATA}.NDB_No = ".$days_nutrition[$f]['ndbno'], array(), array());
+        $results4 = db_query("SELECT WEIGHT.Amount, WEIGHT.Gm_Wgt, WEIGHT.Msre_Desc, WEIGHT.Seq FROM {WEIGHT} WHERE WEIGHT.NDB_No = ".$days_nutrition[$f]['ndbno'], array(), array());
+		$results6 = db_query("SELECT FOOD_DES.Long_Desc FROM {FOOD_DES} WHERE FOOD_DES.NDB_No = ".$days_nutrition[$f]['ndbno'], array(), array());
+	    //define rows
+        $nutrient_values = array();
+        foreach ($results3 as $result) {
+          $nutrient_values[$result->Nutr_No] = array('value'=>$result->Nutr_Val);
+        }
+	    $weight_values = array();
+		$weight_select = array();
+	    foreach ($results4 as $result) {
+	      $weight_values[$result->Seq] = array('amount'=>$result->Amount, 'gmwgt'=>$result->Gm_Wgt, 'msre'=>$result->Msre_Desc);
+		  $weight_select[$result->Seq] = $result->Msre_Desc;
+	    }
+		$food_name = array();
+		foreach ($results6 as $result) {
+		  $food_name[1] = array('foodname'=>$result->Long_Desc);
+		}
+        db_set_active();
+		
+		$seqno=$days_nutrition[$f]['seq'];
+	    $amt=number_format($weight_values[$seqno]['amount']);
+		$amount=$days_nutrition[$f]['amount']*$weight_values[$seqno]['amount'];
+	    $calories = $amount*$nutrient_values['208']['value']*$weight_values[$seqno]['gmwgt']/100;
+	    $protein = $amount*$nutrient_values['203']['value']*$weight_values[$seqno]['gmwgt']/100;
+	    $fat = $amount*$nutrient_values['204']['value']*$weight_values[$seqno]['gmwgt']/100;
+	    $carbs = $amount*$nutrient_values['205']['value']*$weight_values[$seqno]['gmwgt']/100;
+		$total_calories += $calories;
+		$total_protein += $protein;
+		$total_fat += $fat;
+		$total_carbs += $carbs;
+	    $form['daily_nutrition']['body'.$f] = array(
+		  '#type' => 'item',
+		  '#prefix' => '<div id="total_body">',
+		  '#suffix' => '</div>',
+		);
+		$form['daily_nutrition']['body'.$f]['id'.$f] = array(
+		  '#type' => 'hidden',
+		  '#value' => $days_nutrition[$f]['id'],
+		);
+		$form['daily_nutrition']['body'.$f]['ndb'.$f] = array(
+		  '#type' => 'hidden',
+		  '#value' => $days_nutrition[$f]['ndbno'],
+		);
+		$form['daily_nutrition']['body'.$f]['food_name'.$f] = array(
+		  '#type' => 'item',
+		  '#markup' => $food_name[1]['foodname'],
+		  '#prefix' => '<div id="total_body_food_name">',
+		  '#suffix' => '</div>',
+		  '#attributes' => array('class' => array('ellipses')),
+		  '#description' => '<strong>Food Name</strong>',
+		  '#qtip' => array(
+            'title' => array(
+               'type' => 'description',
+			   'value' => '<strong>Food Name</strong>',
+            ),
+            'text' => array(
+              'type' => 'markup',
+              'value' => $food_name[1]['foodname'],
+            ),
+            'position' => array(
+              'my' => 'top left', // Use the corner...
+              'at' => 'middle right', // ...and opposite corner
+            ),
+            'style' => array(
+              'classes' => 'qtip-dark',
+            ),
+          ),
+		);
+		$form['daily_nutrition']['body'.$f]['meal_name'.$f] = array(
+		  '#type' => 'select',
+		  '#size' => 10,
+		  '#options' => $meal_items,
+		  '#default_value' => $days_nutrition[$f]['mealid'],
+		  '#prefix' => '<div id="total_body_meal_name">',
+		  '#suffix' => '</div>',
+		  '#ajax' => array(
+		    'callback' => 'change_serving_callback',
+            'wrapper' => 'dailynutrition',
+	        'progress' => array('type' => 'throbber', 'message' => '')),
+		);
+		$form['daily_nutrition']['body'.$f]['amount'.$f] = array(
+		  '#type' => 'textfield',
+		  '#size' => 4,
+		  '#default_value' => $days_nutrition[$f]['amount'],
+		  '#prefix' => '<div id="total_body_amount">',
+		  '#suffix' => '</div>',
+		  '#ajax' => array(
+		    'callback' => 'change_serving_callback',
+            'wrapper' => 'dailynutrition',
+	        'progress' => array('type' => 'throbber', 'message' => '')),
+		);
+		$form['daily_nutrition']['body'.$f]['serving'.$f] = array(
+		  '#type' => 'select',
+		  '#size' => 10,
+		  '#options' => $weight_select,
+		  '#default_value' => $days_nutrition[$f]['seq'],
+		  '#prefix' => '<div id="total_body_serving">',
+		  '#suffix' => '</div>',
+		  '#ajax' => array(
+		    'callback' => 'change_serving_callback',
+            'wrapper' => 'dailynutrition',
+	        'progress' => array('type' => 'throbber', 'message' => '')),
+		);
+	  $form['daily_nutrition']['body'.$f]['nutrients'.$f] = array(
+        '#type' => 'item',
+	    '#markup' => '<div id="total_body_calories">'.number_format($calories).'</div>
+			          <div id="total_body_protein">'.number_format($protein).'</div>
+			          <div id="total_body_fat">'.number_format($fat).'</div>
+			          <div id="total_body_carbs">'.number_format($carbs).'</div>',
+        );
+	  $form['daily_nutrition']['body'.$f]['delete_item'.$f] = array(
+	    '#type' => 'button',
+		'#prefix' => '<div id="deleteitembutton">',
+		'#suffix' => '</div>',
+		'#attributes' => array('name' => 'delete'.$f),
+		'#ajax' => array(
+		    'callback' => 'delete_item_callback',
+            'wrapper' => 'dailynutrition',
+	        'progress' => array('type' => 'throbber', 'message' => '')),
+	  );
+	  }
+	  $form['daily_nutrition']['footer'] = array(
+        '#type' => 'item',
+	    '#markup' => '<div id="total_footer">
+		                <div id="total_footer_food_name"></div>
+					    <div id="total_footer_meal_name"></div>
+					    <div id="total_footer_amount"></div>
+					    <div id="total_footer_serving">Totals</div>
+		      		    <div id="total_footer_calories">'.number_format($total_calories).'</div>
+   					    <div id="total_footer_protein">'.number_format($total_protein).'</div>
+					    <div id="total_footer_fat">'.number_format($total_fat).'</div>
+					    <div id="total_footer_carbs">'.number_format($total_carbs).'</div>
+						<div id="total_footer_holder"></div>
+					  </div>',
+      );
+	  $form['daily_nutrition']['total_calories'] = array(
+	    '#type' => 'hidden',
+		'#value' => $total_calories,
+	  );
+	  $form['daily_nutrition']['total_protein'] = array(
+	    '#type' => 'hidden',
+		'#value' => $total_protein,
+	  );
+	  $form['daily_nutrition']['total_fat'] = array(
+	    '#type' => 'hidden',
+		'#value' => $total_fat,
+	  );
+	  $form['daily_nutrition']['total_carbs'] = array(
+	    '#type' => 'hidden',
+		'#value' => $total_carbs,
+	  );	  
+	  break;
+  }
+       
+  return $form;
+  
+}  
+
+function pick_a_category_callback($form, $form_state) {
+  return $form['pick_a_food'];
+}
+
+function date_shown_callback($form, $form_state) {
+  return array(
+    '#type' => 'ajax',
+    '#commands' => array(
+      ajax_command_replace("#dateshown", render($form['date_shown'])),
+      ajax_command_replace("#dailynutrition", render($form['daily_nutrition']))
+    )
+  );
+}
+
+function pick_a_food_callback($form, $form_state) {
+  return array(
+    '#type' => 'ajax',
+    '#commands' => array(
+      ajax_command_replace("#nutritionpreview", render($form['nutrition_preview'])),
+      ajax_command_replace("#additembutton", render($form['add_item_button']))
+    )
+  );
+}
+
+function add_item_button_callback($form, $form_state) {
+  global $ndbno, $user, $save_date;
+  
+  db_set_active('nutrition_facts');
+  $addline = db_query("INSERT INTO {DAILY_USER_{NUT_DATA}} (UserId, Meal_Id, Seq, Added_Date, NDB_No, Amount) VALUES (".$user->uid.",'1','1','".$save_date."',".$ndbno.",'1')", array(), array());
+  db_set_active();
+  
+  $form = render_daily_nutrition($form, $form_state);
+  return $form['daily_nutrition'];
+}
+
+function change_serving_callback($form, $form_state) {
+  global $user;
+  $body_id = substr($form_state['triggering_element']['#array_parents'][1],4);
+  $unique_id = $form_state['values']['id'.$body_id];
+  $meal_id = $form_state['values']['meal_name'.$body_id];
+  $seq = $form_state['values']['serving'.$body_id];
+  $amount = $form_state['values']['amount'.$body_id];
+  $ndbno = $form_state['values']['ndb'.$body_id];
+
+  db_set_active('nutrition_facts');
+  $updateline = db_query("UPDATE {DAILY_USER_{NUT_DATA}} SET Meal_Id=".$meal_id.", Seq=".$seq.", Amount=".$amount." WHERE Unique_Id=".$unique_id, array(), array());
+  db_set_active(); 
+  
+  $form = render_daily_nutrition($form, $form_state);
+  return $form['daily_nutrition'];
+}
+
+function delete_item_callback($form,$form_state) {
+  global $user;
+  $body_id = substr($form_state['triggering_element']['#array_parents'][1],4);
+  $unique_id = $form_state['values']['id'.$body_id];
+  
+  db_set_active('nutrition_facts');
+  $updateline = db_query("DELETE FROM {DAILY_USER_{NUT_DATA}} WHERE Unique_Id=".$unique_id, array(), array());
+  db_set_active(); 
+  
+  $form = render_daily_nutrition($form, $form_state);
+  return $form['daily_nutrition'];
+}
+
+function render_daily_nutrition ($form, $form_state) {
+  global $ndbno, $user, $save_date;
+   
+  drupal_add_library('system', 'ui');
+  
+  $form['daily_nutrition'] = array(
+    '#type' => 'item',
+	'#prefix' => '<div id="dailynutrition">',
+	'#suffix' => '</div>',
+  );
+  
+  $form['daily_nutrition']['header'] = array(
+    '#type' => 'item',
+	'#markup' => '  
+					<div id="total_header">
+					  <div id="total_header_food_name">Food Name</div>
+					  <div id="total_header_meal_name">Meal</div>
+					  <div id="total_header_amount">#</div>
+					  <div id="total_header_serving">Serving Size</div>
+		      		  <div id="total_header_calories">Calories</div>
+   					  <div id="total_header_protein">Protein Grams</div>
+					  <div id="total_header_fat">Fat Grams</div>
+					  <div id="total_header_carbs">Carbs Grams</div>
+					  <div id+"total_header_holder"></div>
+					</div>',
+  );
+	
+  db_set_active('nutrition_facts');
+  global $user;
+  $results5 = db_query("SELECT * FROM {DAILY_USER_{NUT_DATA}} WHERE DAILY_USER_{NUT_DATA}.Added_Date = '".$save_date."' AND DAILY_USER_{NUT_DATA}.UserId = ".$user->uid." ORDER BY Unique_Id ASC" , array(), array());
+  $results7 = db_query("SELECT * FROM {MEAL_ITEMS}", array(), array());
+  //define rows
+  $days_nutrition = array();
+  $meal_items = array();
+  $i = 0;
+  foreach ($results5 as $result) {
+    $i += 1;
+    $days_nutrition[$i] = array('mealid'=>$result->Meal_Id, 'seq'=>$result->Seq, 'ndbno'=>$result->NDB_No, 'amount'=>$result->Amount, 'id'=>$result->Unique_Id);
+  }
+  $form ['daily_nutrition']['num_rows'] = array(
+    '#type' => 'hidden',
+	'#value' => $i,
+  );
+  
+  foreach ($results7 as $result) {
+    $meal_items[$result->Meal_Id] = $result->Meal_Name;
+  }
+  db_set_active();
+  
+  $rows = array();
+  $total_calories = 0;
+  $total_carbs = 0;
+  $total_fat = 0;
+  $total_protein = 0;
+  switch (empty($days_nutrition)) {
+    case true:
+	  $form['daily_nutrition']['body']['nodata']['#markup'] = '<p id="nodata">'.t('There is no data to display for this date.').'</p>';
+	  break;
+	default:
+	  unset($form['daily_nutrition']['body']); 
+	  for ($f=1; $f<=$i; $f++) {
+	    db_set_active('nutrition_facts');
+        $results3 = db_query("SELECT {NUT_DATA}.Nutr_No, {NUT_DATA}.Nutr_Val FROM {{NUT_DATA}} WHERE {NUT_DATA}.NDB_No = ".$days_nutrition[$f]['ndbno'], array(), array());
+        $results4 = db_query("SELECT WEIGHT.Amount, WEIGHT.Gm_Wgt, WEIGHT.Msre_Desc, WEIGHT.Seq FROM {WEIGHT} WHERE WEIGHT.NDB_No = ".$days_nutrition[$f]['ndbno'], array(), array());
+		$results6 = db_query("SELECT FOOD_DES.Long_Desc FROM {FOOD_DES} WHERE FOOD_DES.NDB_No = ".$days_nutrition[$f]['ndbno'], array(), array());
+	    //define rows
+        $nutrient_values = array();
+        foreach ($results3 as $result) {
+          $nutrient_values[$result->Nutr_No] = array('value'=>$result->Nutr_Val);
+        }
+	    $weight_values = array();
+		$weight_select = array();
+	    foreach ($results4 as $result) {
+	      $weight_values[$result->Seq] = array('amount'=>$result->Amount, 'gmwgt'=>$result->Gm_Wgt, 'msre'=>$result->Msre_Desc);
+		  $weight_select[$result->Seq] = $result->Msre_Desc;
+	    }
+		$food_name = array();
+		foreach ($results6 as $result) {
+		  $food_name[1] = array('foodname'=>$result->Long_Desc);
+		}
+        db_set_active();
+		
+		$seqno=$days_nutrition[$f]['seq'];
+	    $amt=number_format($weight_values[$seqno]['amount']);
+		$amount=$days_nutrition[$f]['amount']*$weight_values[$seqno]['amount'];
+	    $calories = $amount*$nutrient_values['208']['value']*$weight_values[$seqno]['gmwgt']/100;
+	    $protein = $amount*$nutrient_values['203']['value']*$weight_values[$seqno]['gmwgt']/100;
+	    $fat = $amount*$nutrient_values['204']['value']*$weight_values[$seqno]['gmwgt']/100;
+	    $carbs = $amount*$nutrient_values['205']['value']*$weight_values[$seqno]['gmwgt']/100;
+		$total_calories += $calories;
+		$total_protein += $protein;
+		$total_fat += $fat;
+		$total_carbs += $carbs;
+	    $form['daily_nutrition']['body'.$f] = array(
+		  '#type' => 'item',
+		  '#prefix' => '<div id="total_body">',
+		  '#suffix' => '</div>',
+		);
+		$form['daily_nutrition']['body'.$f]['id'.$f] = array(
+		  '#type' => 'hidden',
+		  '#value' => $days_nutrition[$f]['id'],
+		);
+		$form['daily_nutrition']['body'.$f]['ndb'.$f] = array(
+		  '#type' => 'hidden',
+		  '#value' => $days_nutrition[$f]['ndbno'],
+		);
+		$form['daily_nutrition']['body'.$f]['food_name'.$f] = array(
+		  '#type' => 'item',
+		  '#markup' => $food_name[1]['foodname'],
+		  '#prefix' => '<div id="total_body_food_name">',
+		  '#suffix' => '</div>',
+		  '#attributes' => array('class' => array('ellipses')),
+		  '#description' => '<strong>Food Name</strong>',
+		  '#qtip' => array(
+            'title' => array(
+               'type' => 'description',
+			   'value' => '<strong>Food Name</strong>',
+            ),
+            'text' => array(
+              'type' => 'markup',
+              'value' => $food_name[1]['foodname'],
+            ),
+            'position' => array(
+              'my' => 'top left', // Use the corner...
+              'at' => 'middle right', // ...and opposite corner
+            ),
+            'style' => array(
+              'classes' => 'qtip-dark',
+            ),
+          ),
+		);
+		$form['daily_nutrition']['body'.$f]['meal_name'.$f] = array(
+		  '#type' => 'select',
+		  '#size' => 10,
+		  '#options' => $meal_items,
+		  '#default_value' => $days_nutrition[$f]['mealid'],
+		  '#prefix' => '<div id="total_body_meal_name">',
+		  '#suffix' => '</div>',
+		  '#ajax' => array(
+		    'callback' => 'change_serving_callback',
+            'wrapper' => 'dailynutrition',
+	        'progress' => array('type' => 'throbber', 'message' => '')),
+		);
+		$form['daily_nutrition']['body'.$f]['amount'.$f] = array(
+		  '#type' => 'textfield',
+		  '#size' => 4,
+		  '#default_value' => $days_nutrition[$f]['amount'],
+		  '#prefix' => '<div id="total_body_amount">',
+		  '#suffix' => '</div>',
+		  '#ajax' => array(
+		    'callback' => 'change_serving_callback',
+            'wrapper' => 'dailynutrition',
+	        'progress' => array('type' => 'throbber', 'message' => '')),
+		);
+		$form['daily_nutrition']['body'.$f]['serving'.$f] = array(
+		  '#type' => 'select',
+		  '#size' => 10,
+		  '#options' => $weight_select,
+		  '#default_value' => $days_nutrition[$f]['seq'],
+		  '#prefix' => '<div id="total_body_serving">',
+		  '#suffix' => '</div>',
+		  '#ajax' => array(
+		    'callback' => 'change_serving_callback',
+            'wrapper' => 'dailynutrition',
+	        'progress' => array('type' => 'throbber', 'message' => '')),
+		);
+	  $form['daily_nutrition']['body'.$f]['nutrients'.$f] = array(
+        '#type' => 'item',
+	    '#markup' => '<div id="total_body_calories">'.number_format($calories).'</div>
+			          <div id="total_body_protein">'.number_format($protein).'</div>
+			          <div id="total_body_fat">'.number_format($fat).'</div>
+			          <div id="total_body_carbs">'.number_format($carbs).'</div>',
+        );
+	  $form['daily_nutrition']['body'.$f]['delete_item'.$f] = array(
+	    '#type' => 'button',
+		'#prefix' => '<div id="deleteitembutton">',
+		'#suffix' => '</div>',
+		'#attributes' => array('name' => 'delete'.$f),
+		'#ajax' => array(
+		    'callback' => 'delete_item_callback',
+            'wrapper' => 'dailynutrition',
+	        'progress' => array('type' => 'throbber', 'message' => '')),
+	  );
+	  }
+	  $form['daily_nutrition']['footer'] = array(
+        '#type' => 'item',
+	    '#markup' => '<div id="total_footer">
+		                <div id="total_footer_food_name"></div>
+					    <div id="total_footer_meal_name"></div>
+					    <div id="total_footer_amount"></div>
+					    <div id="total_footer_serving">Totals</div>
+		      		    <div id="total_footer_calories">'.number_format($total_calories).'</div>
+   					    <div id="total_footer_protein">'.number_format($total_protein).'</div>
+					    <div id="total_footer_fat">'.number_format($total_fat).'</div>
+					    <div id="total_footer_carbs">'.number_format($total_carbs).'</div>
+						<div id="total_footer_holder"></div>
+					  </div>',
+      );
+	  $form['daily_nutrition']['total_calories'] = array(
+	    '#type' => 'hidden',
+		'#value' => $total_calories,
+	  );
+	  $form['daily_nutrition']['total_protein'] = array(
+	    '#type' => 'hidden',
+		'#value' => $total_protein,
+	  );
+	  $form['daily_nutrition']['total_fat'] = array(
+	    '#type' => 'hidden',
+		'#value' => $total_fat,
+	  );
+	  $form['daily_nutrition']['total_carbs'] = array(
+	    '#type' => 'hidden',
+		'#value' => $total_carbs,
+	  );	  
+	  break;
+  }
+  drupal_process_form('daily_nutrition',$form,$form_state);
+  return $form;
+}

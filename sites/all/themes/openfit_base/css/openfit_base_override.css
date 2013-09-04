@@ -1,0 +1,338 @@
+.block h2 {
+  color: #E26A38;
+}
+.collapsibleList li {
+  color:black;
+  list-style-type:none;
+}
+
+.collapsibleList li > label {
+  background:url('../images/arrow_down_double.png') no-repeat right transparent; 
+}
+
+.collapsibleList li > input + * {
+  
+  display: none !important;
+}
+ 
+.collapsibleList li > input:checked + * {
+  display: block !important;
+ 
+}
+ 
+.collapsibleList label {
+  display:block;
+  width:33%;
+  cursor: pointer !important;
+}
+
+.collapsibleList ul {
+  border: solid black 1px;
+  border-radius: 6px;
+  background-color: #DDDDDD;
+  padding:5px;
+  margin-bottom:10px !important;
+}
+
+.collapsibleList p {
+  margin-bottom:0px;
+  text-indent:7px;
+}
+
+.collapsibleList li > input {
+  display:none;
+}
+
+.recaptchatable #recaptcha_response_field {
+  left:0px;
+}
+
+fieldset legend span.fieldset-legend {
+  display:none;
+}
+
+fieldset.captcha.form-wrapper {
+  border: none !important;
+  margin-bottom:70px !important;
+  margin-left: 180px !important;
+  max-width: 377px !important;
+  width: 100% !important;
+  border: none !important;
+  padding-top: 0px !important;
+  padding-left: 0px !important;
+}
+
+fieldset .fieldset-wrapper {
+  margin-top:5px !important;
+}
+
+#user-register-form #edit-actions #edit-submit {
+  position: absolute !important;
+  bottom: 30px !important;
+  left: 180px !important; 
+}
+
+#register-terms {
+  position: absolute !important;
+  bottom: 0px !important;
+  left: 180px !important;
+  margin-left:0px !important;
+}
+
+#user-register-form .oneall_social_login {
+  margin-left:180px !important;
+}
+
+#block-system-navigation {
+  border: 1px solid;
+  border-radius: 6px;
+  margin-left: 5px;
+  padding: 5px;
+  background-color:#FFFFFF;
+  border-color: rgb(225, 225, 225);
+}
+
+.block-title {
+  text-transform:none; 
+}
+
+#views-ticker-fade-activity_ticker {
+  list-style-type:none;
+  margin:0px;
+}
+
+#block-recipe-recent, #block-views-activity-ticker-block, #block-views-community-activity-block, #block-forum-new, #block-views-new-articles-block-1 {
+  border: 1px solid;
+  border-radius: 6px;
+  margin-left: 5px;
+  padding: 5px;
+  background-color:#FFFFFF;
+  border-color: rgb(225, 225, 225);
+}
+
+#block-views-community-activity-block, #block-views-activity-ticker-block {
+  width: 282px;
+  margin-left: 10px; 
+}
+
+#block-views-activity-ticker-block .block-inner clearfix {
+  margin:0px;
+}
+
+#search-block-form input.form-submit {
+  background: url("../images/search.png") no-repeat center transparent;
+  float:left; 
+  border: none;
+  color: transparent;
+  width: 32px;
+  margin-top:14px;
+  margin-left:-32px;
+}
+
+#edit-search-block-form--2 {
+  width:250px;
+  border-radius:18px;
+  padding-right:32px;
+}
+
+#block-search-form .container-inline {
+  margin-top:-25px;
+}
+
+#search-block-form .form-item {
+  float:left; 
+}
+
+#page-title {
+  font-variant:small-caps;
+  color: #739246;
+  text-align:center !important;  
+  font-size:3em !important;
+}
+
+#widgets-element-socialmedia_share-default {
+  margin-left:30%;
+  margin-top:25px;
+}
+
+#widgets-element-socialmedia_share-default .widgets-style-horizontal {
+  margin: 0px 2px;
+}
+
+#footer-sitemap {
+  border-top:solid 2px black; 
+  border-bottom:solid 2px black;
+}
+
+#footer-sitemap ul li {
+  list-style: none outside none;
+  margin-left:25%;
+  margin-top:10px;
+  margin-bottom:10px;
+}
+
+#footer-sitemap .footer_links_menu-site-map-menu {
+  margin-left:10px;
+}
+
+#footer-sitemap a.fs-root-link {
+  font-size: 1.2em;
+  line-height: 1.5em;
+  color: #9BC642;
+}
+
+#footer-sitemap a.active {
+  color:#DF3E1D;
+}
+
+#article-32 .field-label {
+  display:none;
+}
+
+#article-32 img {
+  width:100%;
+  float:left;
+}
+
+#article-32 figure {
+  width:30%;
+  margin-left:3%;
+  float:left;
+}
+
+#article-32 section {
+  float:left;
+}
+
+.view-front-page-slideshow .views-field-title {
+  position: absolute;
+  font-size:18px;
+  font-variant:small-caps;
+  text-align: center;
+  bottom: 35px;
+  right: 0px;
+  padding: 2px;
+  background-color: white;
+  opacity: 0.6;
+}
+
+.view-front-page-slideshow .views-field-counter {
+  float: left;
+  margin-top:10px;
+  padding: 10px 5px;
+  background:url('../images/page_nav_inactive.png') top left no-repeat;
+  width:10px;
+}
+
+.view-front-page-slideshow .active .views-field-counter {
+  background:url('../images/active_nav_item.gif') top left no-repeat;
+}
+
+.view-front-page-slideshow .views-content-counter {
+  display:none;
+}
+
+.view-front-page-slideshow .views-slideshow-controls-bottom {
+  margin-left:45%;
+}
+
+.view-front-page-slideshow .field-content img {
+  width:100%;
+  max-width:700px;
+  height:auto;
+}
+
+.clearfix .with-logo {
+  background: rgb(226,106,56); 
+ }
+
+#site-name a{
+  color: rgb(68, 38, 38);
+  font-variant:small-caps;
+  font-size:55px;
+}
+
+#site-slogan {
+  color: rgb(254, 232, 221); 
+}
+
+#menu-bar .nav .clearfix {
+  background-color: rgb(226, 106, 56); 
+}
+
+#menu-bar-wrapper {
+  background: rgb(226,106,56);  
+}
+
+#menu-bar ul li a:hover {
+  background-color: #CC3918; 
+}
+
+.article-community-activity .digit {
+  padding:4px 15px 0px 15px;
+}
+
+.article-community-activity .digit-list .seperator {
+  background:none;
+  color: #333;
+  display:block;
+  float: left;
+  font-size: 6em;
+  line-height: 1.25em;
+  margin:0 !important;
+  margin-top: 0.45em !important;
+  overflow: hidden; 
+  padding: 0 !important;
+  text-align: center;
+}
+
+/* This is the selector you need to target different 'scales' of digits */
+.article-community-activity .digit-num-3 li {
+  font-size: 5em;
+}
+
+.article-community-activity .digit-num-6 li {
+  font-size: 4em;
+}
+
+.article-community-activity .digit-num-6 .seperator {
+  font-size: 2em;
+  margin-top: 0.3em !important;
+}
+
+.article-community-activity .digit-num-9 li {
+  font-size: 3em; 
+}
+
+.article-community-activity .digit-num-9 .seperator {
+  font-size: 1.6em;
+  margin-top: 0.8em !important;
+}
+
+.article-community-activity .digit-num-12 li {
+  font-size: 2em;
+}
+
+.article-community-activity digit-num-12 .seperator {
+  font-size: 1.3em;
+  margin-top: 0.23em !important;
+}
+
+.article-community-activity .digit-num-15 li {
+  font-size: 1.6em;
+}
+
+.article-community-activity .digit-num-15 .seperator {
+  font-size: .8em;
+  margin-top: 0.2em !important;
+}
+
+.article-community-activity .label {
+  font-size: 120%;
+  font-weight: bold;
+}
+
+.article-community-activity .equivalent {
+  font-size: 100%;
+}
+

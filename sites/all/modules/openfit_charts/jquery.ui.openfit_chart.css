@@ -1,0 +1,93 @@
+.openfit-chart .inner {
+	height: 400px;
+	width: 100% - 3em;
+	margin: 0em 3em;
+}
+
+.openfit-chart {
+	border: none;
+	margin: 0px;
+	padding: 0 0 2em 0;
+}
+
+.openfit-chart .title {
+	display: none;
+}
+
+.openfit-chart {
+	border: 1px solid #e1e1e1;
+	border-radius: 6px;
+}
+
+.openfit-chart table {
+	width: auto !important;
+}
+
+.yaxis, .y2axis {
+  width: 3em;
+  display: inline-block;
+}
+
+.xaxis {
+	display: inline-block;
+}
+
+.yaxis span, .y2axis span {
+	white-space: nowrap;
+}
+
+.vertical {
+  -webkit-transform: rotate(90deg);  
+     -moz-transform: rotate(90deg);  
+      -ms-transform: rotate(90deg);  
+       -o-transform: rotate(90deg);  
+          transform: rotate(90deg);
+             filter: progid:DXImageTransform.Microsoft.Matrix(
+                     M11=0.9914448613738104, M12=-0.13052619222005157,M21=0.13052619222005157, M22=0.9914448613738104, sizingMethod='auto expand');
+               zoom: 1;
+}
+
+.openfit-chart .action-bar {
+	color: #33333 !important;
+  background-color: #c7eaf7;
+  border-bottom: 1px solid #9ad5e9;
+  height: 3.4em;
+  margin-bottom: 1em;
+}
+
+.openfit-chart .action-bar .button {
+	float: right;
+  display: inline-block;
+  height: 2.35em;
+  overflow: hidden;
+  position: relative;
+  text-decoration: none;
+  vertical-align: middle;
+  margin-right: 0.4em;
+  margin-top: 0.4em;
+}
+
+.openfit-chart .action-bar .button.ui-button-icon-only .ui-button-text {
+  	display: none;
+}
+
+.openfit-chart .action-bar .button.ui-button-icon-only .ui-icon {
+	top: 0 !important;
+}
+.openfit-chart .axis-select{
+	margin-top: .4em;
+}
+
+.openfit-chart .axis-1 {
+	float: left;
+	margin-left: .4em;
+}
+
+.openfit-chart .axis-2 {
+	float: right;
+	margin-right: .4em;
+}
+
+.chart-settings span {
+	margin-right: 10px;
+}

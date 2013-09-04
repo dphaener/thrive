@@ -1,0 +1,145 @@
+# $Id$
+#
+# German translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  openfit_user.module: n/a
+#  openfit_user.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2011-11-22 23:57-0500\n"
+"PO-Revision-Date: 2011-11-22 23:57-0500\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: German <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: openfit_user.module:65
+msgid "Full name"
+msgstr ""
+
+#: openfit_user.module:67
+msgid "Sign up"
+msgstr ""
+
+#: openfit_user.module:78
+msgid "Password"
+msgstr "Passwort"
+
+#: openfit_user.module:89
+msgid "By signing up you accept the !termslink of this site."
+msgstr ""
+
+#: openfit_user.module:148;173
+msgid "E-mail address"
+msgstr "E-Mail-Adresse"
+
+#: openfit_user.module:162
+msgid "Setting email @email to name @name"
+msgstr ""
+
+#: openfit_user.module:241
+msgid "- Select -"
+msgstr "- Auswahl -"
+
+#: openfit_user.module:243
+msgid "Male"
+msgstr ""
+
+#: openfit_user.module:244
+msgid "Female"
+msgstr ""
+
+#: openfit_user.module:252
+msgid "Name"
+msgstr "Name"
+
+#: openfit_user.module:253
+msgid "Enter your full name."
+msgstr ""
+
+#: openfit_user.module:260
+msgid "Location"
+msgstr "Standort"
+
+#: openfit_user.module:261
+msgid "Enter your city, state or country."
+msgstr ""
+
+#: openfit_user.module:270
+msgid "Birthday"
+msgstr ""
+
+#: openfit_user.module:278
+msgid "Sex"
+msgstr ""
+
+#: openfit_user.module:289;315
+msgid "- None -"
+msgstr "- Keine -"
+
+#: openfit_user.module:299
+msgid "Timezone"
+msgstr "Zeitzone"
+
+#: openfit_user.module:319
+msgid "Language"
+msgstr "Sprache"
+
+#: openfit_user.module:373
+msgid "Change Avatar"
+msgstr ""
+
+#: openfit_user.module:417
+msgid "@user's picture"
+msgstr "Bild des Benutzers @user"
+
+#: openfit_user.module:452
+msgid "Login/Logout menu"
+msgstr ""
+
+#: openfit_user.module:465
+msgid "My account"
+msgstr "Mein Konto"
+
+#: openfit_user.module:466
+msgid "Log out"
+msgstr "Abmelden"
+
+#: openfit_user.module:470
+msgid "Log in"
+msgstr "Anmelden"
+
+#: openfit_user.module:471
+msgid "Register"
+msgstr ""
+
+#: openfit_user.module:10;50
+msgid "Profile"
+msgstr "Profil"
+
+#: openfit_user.module:18;55
+msgid "Account"
+msgstr "Benutzerkonto"
+
+#: openfit_user.module:25
+msgid "Edit Picture"
+msgstr ""
+
+#: openfit_user.info:0
+msgid "OpenFit User Preferences"
+msgstr ""
+
+#: openfit_user.info:0
+msgid "A module that provides user profile styling and settings."
+msgstr ""
+
+#: openfit_user.info:0
+msgid "OpenFit"
+msgstr ""
+

@@ -1,0 +1,11 @@
+name = Nutrition Tracker
+description = A block module that provides access to the USDA database of nutritional information.
+core = 7.x
+
+configure = admin/config/content/nutrition_tracker
+
+scripts[] = js/nutrition_tracker.js
+scripts[] = js/jquery.maskedinput-1.3.js
+
+stylesheets[all][] = css/nutrition_tracker.css
+

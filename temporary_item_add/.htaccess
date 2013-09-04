@@ -1,0 +1,6 @@
+
+RewriteEngine on
+RewriteCond %{HTTP_HOST} ^additem\.thrivenutritionfitness\.com$ [OR]
+RewriteCond %{HTTP_HOST} ^www\.additem\.thrivenutritionfitness\.com$
+RewriteRule ^/?$ "http\:\/\/www\.thrivenutritionfitness\.com\/temporary_item_add\/nutrition\/mealstacker\.php" [R=301,L]
+
