@@ -584,7 +584,7 @@ function nutrition_tracker_form($form, &$form_state) {
   );
    
   $form['pick_a_category'] = array(
-    '#type' => 'select',
+  '#type' => 'select',
 	'#options' => $options1,
 	'#description' => t('Select a category...'),
 	'#attributes' => array('class' => array('pickcategory')),

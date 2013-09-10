@@ -5,7 +5,7 @@
   font-size:17px;
 }
 
-#nutrition-tracker-add-item-form #edit_pick_a_category_chzn {
+#nutrition-tracker-add-item-form #edit_pick_a_category_chosen {
   width:400px !important;
 }
 
@@ -185,7 +185,7 @@ ul .thing1 {
   margin-left:5px;
 }
 
-#pickfood #edit_pick_a_food_chzn, #pickcategories #edit_pick_a_category_chzn {
+#pickfood #edit_pick_a_food_chosen, #pickcategories #edit_pick_a_category_chosen {
   display:inline !important;
 }
 
@@ -462,7 +462,7 @@ ul .thing1 {
   border:none;
 }
 
-#total_body .chzn-container {
+#total_body .chosen-container {
   width:100% !important; 
   text-align:left;
   display:inline !important;
@@ -513,4 +513,9 @@ ul .thing1 {
   -moz-opacity: 0.9;
   -khtml-opacity: 0.9;
   opacity: 0.9;
+}
+
+.chosen-drop {
+  min-width: 100px;
+  width: inherit !important;
 }
